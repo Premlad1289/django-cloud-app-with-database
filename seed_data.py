@@ -10,7 +10,6 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -23,7 +22,7 @@ django.setup()
 from django.core.management import call_command
 from django.contrib.auth.models import User
 from django.utils.timezone import now
-from onlinecourse.models import Course, Lesson, Instructor, Learner, Question, Choice, Enrollment
+from onlinecourse.models import Course, Lesson, Instructor, Learner, Question, Choice, Enrollment, Submission
 
 
 def run_seed():
@@ -32,7 +31,7 @@ def run_seed():
     call_command('migrate')
 
     print("Step 2: Creating superuser (admin)...")
-    admin_user, created = User.objects.get_or_create(
+    admin_user, _ = User.objects.get_or_create(
         username='admin',
         defaults={'email': 'admin@example.com', 'first_name': 'Admin', 'last_name': 'User', 'is_staff': True, 'is_superuser': True}
     )
@@ -40,19 +39,11 @@ def run_seed():
     admin_user.is_staff = True
     admin_user.is_superuser = True
     admin_user.save()
-    if created:
-        print("  Superuser 'admin' created successfully with password 'admin123'.")
-    else:
-        print("  Superuser 'admin' updated successfully with password 'admin123'.")
 
-    # Create instructor
-    instructor, _ = Instructor.objects.get_or_create(
-        user=admin_user,
-        defaults={'total_learners': 150}
-    )
+    instructor, _ = Instructor.objects.get_or_create(user=admin_user, defaults={'total_learners': 150})
 
     print("Step 3: Creating sample Course and Lessons...")
-    course, course_created = Course.objects.get_or_create(
+    course, _ = Course.objects.get_or_create(
         name="Cloud Application Development with Django",
         defaults={
             'description': "Learn how to build, deploy, and scale robust cloud-native web applications using Python, Django, and cloud database services.",
@@ -63,7 +54,6 @@ def run_seed():
     course.instructors.add(instructor)
     course.save()
 
-    # Clear old lessons and questions for clean idempotency if re-run
     course.lesson_set.all().delete()
     course.question_set.all().delete()
 
@@ -72,9 +62,8 @@ def run_seed():
         order=0,
         course=course,
         content=(
-            "Cloud computing delivers computing services—including servers, storage, databases, networking, and software—over the internet. "
-            "Django is a high-level Python web framework designed for rapid and clean development. It follows the Model-View-Template (MVT) "
-            "architectural pattern to separate database schema, application logic, and user presentation."
+            "Cloud computing delivers computing services over the internet. Django is a high-level Python web framework "
+            "designed for rapid and clean development following the Model-View-Template (MVT) pattern."
         )
     )
 
@@ -84,56 +73,48 @@ def run_seed():
         course=course,
         content=(
             "Django's Object-Relational Mapper (ORM) allows developers to interact with database tables using Python code. "
-            "Using 'python manage.py makemigrations' and 'python manage.py migrate', changes to models are safely and seamlessly "
-            "applied to SQLite, PostgreSQL, or cloud-hosted database instances."
+            "Migrations safely propagate model changes into SQLite, PostgreSQL, or cloud databases."
         )
     )
 
     print("Step 4: Creating Questions and Choices...")
-    # Question 1
     q1 = Question.objects.create(
+        course=course,
         question_text="Which architectural pattern does Django follow to structure web applications?",
         grade=50
     )
-    q1.courses.add(course)
-
     Choice.objects.create(question=q1, choice_text="Model-View-Template (MVT)", is_correct=True)
     Choice.objects.create(question=q1, choice_text="Model-View-Presenter (MVP)", is_correct=False)
     Choice.objects.create(question=q1, choice_text="Single Page Application (SPA)", is_correct=False)
     Choice.objects.create(question=q1, choice_text="Client-Server Direct Database Querying", is_correct=False)
 
-    # Question 2
     q2 = Question.objects.create(
+        course=course,
         question_text="Which Django management command applies pending database migrations to the configured database?",
         grade=50
     )
-    q2.courses.add(course)
-
     Choice.objects.create(question=q2, choice_text="python manage.py migrate", is_correct=True)
     Choice.objects.create(question=q2, choice_text="python manage.py runserver", is_correct=False)
     Choice.objects.create(question=q2, choice_text="python manage.py startapp", is_correct=False)
     Choice.objects.create(question=q2, choice_text="python manage.py inspectdb", is_correct=False)
 
-    # Create a test learner user
-    student, s_created = User.objects.get_or_create(
+    student, _ = User.objects.get_or_create(
         username='student',
         defaults={'email': 'student@example.com', 'first_name': 'Jane', 'last_name': 'Doe'}
     )
     student.set_password('student123')
     student.save()
-    Learner.objects.get_or_create(
-        user=student,
-        defaults={'occupation': Learner.DEVELOPER, 'social_link': 'https://github.com/'}
-    )
-    Enrollment.objects.get_or_create(user=student, course=course, defaults={'mode': 'honor'})
+    Learner.objects.get_or_create(user=student, defaults={'occupation': Learner.DEVELOPER, 'social_link': 'https://github.com/'})
+    en, _ = Enrollment.objects.get_or_create(user=student, course=course, defaults={'mode': 'honor'})
 
-    print("\nDatabase seeded successfully!")
-    print("--------------------------------------------------")
-    print("Superuser:  username: admin   | password: admin123")
-    print("Test User:  username: student | password: student123")
-    print("Sample Course: 'Cloud Application Development with Django'")
-    print("Two sample questions (50 pts each) with choices populated.")
-    print("--------------------------------------------------")
+    sub, _ = Submission.objects.get_or_create(enrollment=en)
+    sub.choices.clear()
+    for q in course.question_set.all():
+        for ch in q.choice_set.filter(is_correct=True):
+            sub.choices.add(ch)
+    sub.save()
+
+    print("Database seeded successfully with course, questions, choices, and passing submission!")
 
 
 if __name__ == '__main__':
