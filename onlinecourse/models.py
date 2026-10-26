@@ -1,10 +1,6 @@
 import sys
 from django.utils.timezone import now
-try:
-    from django.db import models
-except Exception:
-    print("There was an issue importing models from django.db")
-
+from django.db import models
 from django.contrib.auth.models import User
 
 
@@ -13,7 +9,7 @@ class Instructor(models.Model):
         User,
         on_delete=models.CASCADE,
     )
-    total_learners = models.IntegerField()
+    total_learners = models.IntegerField(default=0)
 
     def __str__(self):
         return self.user.username
@@ -40,25 +36,24 @@ class Learner(models.Model):
         choices=OCCUPATION_CHOICES,
         default=STUDENT
     )
-    social_link = models.URLField(max_length=200)
+    social_link = models.URLField(max_length=200, blank=True)
 
     def __str__(self):
-        return self.user.username + "," + self.occupation
+        return f"{self.user.username}, {self.occupation}"
 
 
 class Course(models.Model):
-    name = models.CharField(null=False, max_length=30, default='online course')
-    image = models.ImageField(upload_to='course_images/')
+    name = models.CharField(null=False, max_length=100, default='online course')
+    image = models.ImageField(upload_to='course_images/', null=True, blank=True)
     description = models.CharField(max_length=1000)
-    pub_date = models.DateField(null=True)
+    pub_date = models.DateField(null=True, blank=True)
     instructors = models.ManyToManyField(Instructor)
     users = models.ManyToManyField(User, through='Enrollment')
     total_enrollment = models.IntegerField(default=0)
     is_enrolled = False
 
     def __str__(self):
-        return "Name: " + self.name + "," + \
-               "Description: " + self.description
+        return f"Name: {self.name}, Description: {self.description}"
 
 
 class Lesson(models.Model):
@@ -66,6 +61,9 @@ class Lesson(models.Model):
     order = models.IntegerField(default=0)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     content = models.TextField()
+
+    def __str__(self):
+        return self.title
 
 
 class Enrollment(models.Model):
@@ -83,6 +81,9 @@ class Enrollment(models.Model):
     mode = models.CharField(max_length=5, choices=COURSE_MODES, default=AUDIT)
     rating = models.FloatField(default=5.0)
 
+    def __str__(self):
+        return f"Enrollment: {self.user.username} in {self.course.name}"
+
 
 class Question(models.Model):
     courses = models.ManyToManyField(Course)
@@ -96,7 +97,7 @@ class Question(models.Model):
         all_answers = self.choice_set.filter(is_correct=True).count()
         selected_correct = self.choice_set.filter(is_correct=True, id__in=selected_ids).count()
         selected_wrong = self.choice_set.filter(is_correct=False, id__in=selected_ids).count()
-        if all_answers == selected_correct and selected_wrong == 0:
+        if all_answers > 0 and all_answers == selected_correct and selected_wrong == 0:
             return True
         return False
 
@@ -113,3 +114,6 @@ class Choice(models.Model):
 class Submission(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
     choices = models.ManyToManyField(Choice)
+
+    def __str__(self):
+        return f"Submission {self.id} for {self.enrollment}"

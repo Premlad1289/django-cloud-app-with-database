@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Result - {{ course.name }}</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .correct-answer {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .wrong-answer {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .result-card {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand font-weight-bold" href="{% url 'onlinecourse:index' %}">Online Learning Platform</a>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'onlinecourse:index' %}">Courses</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ml-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <span class="navbar-text mr-3 text-light">Welcome, <strong>{{ user.first_name|default:user.username }}</strong></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm" href="{% url 'onlinecourse:logout' %}">Logout</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Result Banner -->
+        {% if grade >= 80 %}
+            <div class="alert alert-success shadow-sm">
+                <b>Congratulations, {{ user.first_name|default:user.username }}! You have passed the exam with score {{ grade }}/100.</b>
+            </div>
+        {% else %}
+            <div class="alert alert-danger shadow-sm">
+                <b>Failed! You scored {{ grade }}/100. You need at least 80/100 to pass. Please review the course materials and try again.</b>
+            </div>
+        {% endif %}
+
+        <div class="card result-card border-0">
+            <div class="card-header bg-white border-bottom">
+                <h4 class="mb-0 text-primary font-weight-bold">Exam Review: {{ course.name }}</h4>
+            </div>
+            <div class="card-body">
+                {% for question in course.question_set.all %}
+                    <div class="card mb-3 border-light bg-light">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0 font-weight-bold">
+                                Question {{ forloop.counter }}: {{ question.question_text }}
+                                <span class="badge badge-secondary float-right">{{ question.grade }} Points</span>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                {% for choice in question.choice_set.all %}
+                                    <li class="list-group-item bg-transparent">
+                                        {% if choice.id in choices %}
+                                            {% if choice.is_correct %}
+                                                <span class="correct-answer">
+                                                    [&#10004;] {{ choice.choice_text }} <span class="badge badge-success ml-2">Correct Answer (Selected)</span>
+                                                </span>
+                                            {% else %}
+                                                <span class="wrong-answer">
+                                                    [&#10008;] {{ choice.choice_text }} <span class="badge badge-danger ml-2">Incorrect Selection</span>
+                                                </span>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if choice.is_correct %}
+                                                <span class="correct-answer">
+                                                    [ ] {{ choice.choice_text }} <span class="badge badge-warning text-dark ml-2">Correct Answer (Not Selected)</span>
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">
+                                                    [ ] {{ choice.choice_text }}
+                                                </span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <div class="mt-4 text-center">
+                    <a href="{% url 'onlinecourse:course_details' course.id %}" class="btn btn-primary px-4 font-weight-bold mr-2">Back to Course</a>
+                    <a href="{% url 'onlinecourse:index' %}" class="btn btn-outline-secondary px-4 font-weight-bold">Browse Courses</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

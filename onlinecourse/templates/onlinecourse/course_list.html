@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - Online Learning Platform</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .hero {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #ffffff;
+            padding: 50px 20px;
+            border-radius: 8px;
+            margin-bottom: 35px;
+            text-align: center;
+        }
+        .course-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.06);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .course-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.12);
+        }
+        .card-body {
+            display: flex;
+            flex-direction: column;
+        }
+        .card-text {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand font-weight-bold" href="{% url 'onlinecourse:index' %}">Online Learning Platform</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{% url 'onlinecourse:index' %}">Courses</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ml-auto">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <span class="navbar-text mr-3 text-light">Welcome, <strong>{{ user.first_name|default:user.username }}</strong></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm my-1" href="{% url 'onlinecourse:logout' %}">Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item mr-2">
+                        <a class="btn btn-outline-light btn-sm my-1" href="{% url 'onlinecourse:login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary btn-sm my-1" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero shadow-sm">
+            <h1 class="display-4 font-weight-bold">Explore Our Cloud & Django Courses</h1>
+            <p class="lead">Master cloud development, take interactive quizzes, and earn your verified credentials.</p>
+        </div>
+
+        <h3 class="mb-4 font-weight-bold text-dark">Featured Courses</h3>
+
+        <div class="row">
+            {% if course_list %}
+                {% for course in course_list %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card course-card">
+                        <div class="card-body">
+                            <h5 class="card-title font-weight-bold text-primary">{{ course.name }}</h5>
+                            <p class="card-text text-muted">
+                                {{ course.description|truncatewords:25 }}
+                            </p>
+                            <div class="mb-3">
+                                <span class="badge badge-light border p-2 mr-2">
+                                    Learners: {{ course.total_enrollment }}
+                                </span>
+                                {% if course.pub_date %}
+                                <span class="badge badge-secondary p-2">
+                                    {{ course.pub_date|date:"M Y" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="mt-auto pt-2 border-top">
+                                <a href="{% url 'onlinecourse:course_details' course.id %}" class="btn btn-outline-primary btn-block font-weight-bold">
+                                    View Course & Lessons
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center py-4">
+                        <h5>No courses available yet!</h5>
+                        <p class="mb-0">Run the database seed script to add sample courses, lessons, and questions.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
