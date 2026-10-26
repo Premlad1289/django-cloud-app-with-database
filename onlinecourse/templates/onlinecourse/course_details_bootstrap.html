@@ -10,6 +10,7 @@
     <title>{{ course.name }}</title>
 </head>
 <body>
+    <!-- Navigation Bar -->
     <nav class="navbar navbar-light bg-light">
         <div class="container-fluid">
             <div class="navbar-header">
@@ -38,14 +39,21 @@
         </div>
     </nav>
 
-    <div class="container">
+    <!-- Page Content Container -->
+    <div class="container mt-4">
         <h2>{{ course.name }}</h2>
-        <div class="card-columns-vertical">
+        <p class="lead">{{ course.description }}</p>
+
+        <div class="card-deck">
             <h5>Lessons:</h5>
             {% for lesson in course.lesson_set.all %}
-                <div class="card mt-1">
-                    <div class="card-header"><h5>Lesson {{ lesson.order|add:1 }}: {{ lesson.title }}</h5></div>
-                    <div class="card-body">{{ lesson.content }}</div>
+                <div class="card mt-1 mb-2">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Lesson {{ lesson.order|add:1 }}: {{ lesson.title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ lesson.content }}</p>
+                    </div>
                 </div>
             {% endfor %}
         </div>
